@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { signUpSchema } from "@/lib/validations/auth";
+import { signUpSchema, signInSchema } from "@/lib/validations/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ActionResult } from "@/types";
@@ -45,4 +45,33 @@ export async function signUpAction(
 
   // Email confirmation required — signal form to show "check email" state
   return { success: true, data: undefined };
+}
+
+export async function signInAction(
+  email: string,
+  password: string,
+): Promise<ActionResult<void>> {
+  const parsed = signInSchema.safeParse({ email, password });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
+
+  if (error) {
+    // Normalize — do not surface Supabase's raw message; prevents revealing which credential is wrong
+    return { success: false, error: "Invalid email or password" };
+  }
+
+  redirect("/fleet");
+}
+
+export async function signOutAction(): Promise<void> {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/sign-in");
 }

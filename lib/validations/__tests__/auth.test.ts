@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { signUpSchema } from "../auth";
+import { signUpSchema, signInSchema } from "../auth";
 
 describe("signUpSchema", () => {
   it("accepts valid email, password ≥ 8 chars, and matching confirmPassword", () => {
@@ -60,6 +60,52 @@ describe("signUpSchema", () => {
       email: "user@example.com",
       password: "exactly8",
       confirmPassword: "exactly8",
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("signInSchema", () => {
+  it("accepts a valid email and password", () => {
+    const result = signInSchema.safeParse({
+      email: "user@example.com",
+      password: "anypassword",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an invalid email address", () => {
+    const result = signInSchema.safeParse({
+      email: "not-an-email",
+      password: "anypassword",
+    });
+    expect(result.success).toBe(false);
+    const messages = result.error?.issues.map((i) => i.message) ?? [];
+    expect(messages).toContain("Enter a valid email address");
+  });
+
+  it("rejects an empty password", () => {
+    const result = signInSchema.safeParse({
+      email: "user@example.com",
+      password: "",
+    });
+    expect(result.success).toBe(false);
+    const messages = result.error?.issues.map((i) => i.message) ?? [];
+    expect(messages).toContain("Password is required");
+  });
+
+  it("rejects an empty email", () => {
+    const result = signInSchema.safeParse({
+      email: "",
+      password: "anypassword",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts a password shorter than 8 characters (no length constraint on sign-in)", () => {
+    const result = signInSchema.safeParse({
+      email: "user@example.com",
+      password: "short",
     });
     expect(result.success).toBe(true);
   });
