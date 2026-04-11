@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 import { Suspense } from "react";
 
 async function ErrorContent({
@@ -42,6 +43,14 @@ export default function Page({
               <Suspense>
                 <ErrorContent searchParams={searchParams} />
               </Suspense>
+              <p className="text-sm text-muted-foreground mt-4">
+                <Link
+                  href="/forgot-password"
+                  className="underline underline-offset-4"
+                >
+                  Request a new password reset link
+                </Link>
+              </p>
             </CardContent>
           </Card>
         </div>
