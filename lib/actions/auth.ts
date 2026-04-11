@@ -1,0 +1,48 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { signUpSchema } from "@/lib/validations/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import type { ActionResult } from "@/types";
+
+export async function signUpAction(
+  email: string,
+  password: string,
+): Promise<ActionResult<void>> {
+  const parsed = signUpSchema
+    .pick({ email: true, password: true })
+    .safeParse({ email, password });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const headersList = await headers();
+  const origin =
+    headersList.get("origin") ??
+    (() => {
+      const proto =
+        headersList.get("x-forwarded-proto") ?? "https";
+      const host = headersList.get("host") ?? "";
+      return `${proto}://${host}`;
+    })();
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${origin}/auth/callback?next=/fleet`,
+    },
+  });
+
+  if (error) return { success: false, error: error.message };
+
+  // Email confirmation disabled — session exists, user is signed in immediately
+  if (data.session) {
+    redirect("/fleet");
+  }
+
+  // Email confirmation required — signal form to show "check email" state
+  return { success: true, data: undefined };
+}
