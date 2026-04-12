@@ -113,17 +113,16 @@ export async function forgotPasswordAction(
 export async function updatePasswordAction(
   password: string,
 ): Promise<ActionResult<void>> {
-  const parsed = updatePasswordSchema
-    .innerType()
-    .pick({ password: true })
-    .safeParse({ password });
+  // Validate only the password field server-side (confirmPassword is client-only).
+  // .innerType().pick() is not available in Zod v4 — use an inline schema instead.
+  const parsed = updatePasswordSchema.shape.password.safeParse(password);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({
-    password: parsed.data.password,
+    password: parsed.data,
   });
 
   if (error) return { success: false, error: error.message };
