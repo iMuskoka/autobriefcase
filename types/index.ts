@@ -3,11 +3,20 @@ export type ActionResult<T = void> =
   | { success: true; data: T }
   | { success: false; error: string }
 
-// Stub types — will be replaced with Database["public"]["Tables"][*]["Row"] once
-// supabase.ts is generated and schema expands in Stories 2.x–5.x
+import { VEHICLE_CATEGORY_VALUES } from "@/lib/validations/vehicle";
+
+// Derived from VEHICLE_CATEGORY_VALUES — single source of truth, cannot drift
+export type VehicleCategory = (typeof VEHICLE_CATEGORY_VALUES)[number];
+
 export type Vehicle = {
   id: string
   user_id: string
+  category: VehicleCategory
+  make: string
+  model: string
+  year: number
+  nickname: string | null
+  notes: string | null
   created_at: string
   updated_at: string
 }
