@@ -5,12 +5,12 @@ import { createDownloadUrl } from "@/lib/storage/signed-urls";
 import { Button } from "@/components/ui/button";
 import { DeleteDocumentButton } from "@/components/documents/DeleteDocumentButton";
 import { DocumentEditForm } from "@/components/documents/DocumentEditForm";
-import type { Document } from "@/types";
+import { ReminderSettings } from "@/components/reminders/ReminderSettings";
+import type { Document, Vehicle, Reminder } from "@/types";
 import {
   DOCUMENT_TYPE_LABELS,
   type DocumentType,
 } from "@/lib/validations/document";
-import type { Vehicle } from "@/types";
 
 export default async function DocumentDetailPage({
   params,
@@ -20,7 +20,7 @@ export default async function DocumentDetailPage({
   const { vehicleId, documentId } = await params;
 
   const supabase = await createClient();
-  const [{ data: document }, { data: vehicle }] = await Promise.all([
+  const [{ data: document }, { data: vehicle }, { data: reminder }] = await Promise.all([
     supabase
       .from("documents")
       .select("*")
@@ -32,6 +32,11 @@ export default async function DocumentDetailPage({
       .select("id, make, model, nickname")
       .eq("id", vehicleId)
       .single(),
+    supabase
+      .from("reminders")
+      .select("*")
+      .eq("document_id", documentId)
+      .maybeSingle(),
   ]);
 
   if (!document || !vehicle) notFound();
@@ -98,6 +103,15 @@ export default async function DocumentDetailPage({
 
       {/* Edit details */}
       <DocumentEditForm document={document as Document} vehicleId={vehicleId} />
+
+      {/* Reminder settings — only when document has an expiry date and a reminder exists */}
+      {document.expiry_date !== null && reminder !== null && (
+        <ReminderSettings
+          reminder={reminder as Reminder}
+          vehicleId={vehicleId}
+          documentId={documentId}
+        />
+      )}
     </div>
   );
 }
