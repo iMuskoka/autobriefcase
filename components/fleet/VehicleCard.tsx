@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Vehicle, VehicleCategory } from "@/types";
@@ -26,10 +27,19 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
             <Icon size={24} aria-hidden="true" className="text-muted-foreground" />
             <Badge variant="secondary" className="text-xs">—</Badge>
           </div>
-          <VehicleCardMenu vehicleId={vehicle.id} vehicleName={displayName} />
+          <div className="relative z-10">
+            <VehicleCardMenu vehicleId={vehicle.id} vehicleName={displayName} />
+          </div>
         </div>
         <div>
-          <h3 className="font-semibold text-base leading-tight">{displayName}</h3>
+          <h3 className="font-semibold text-base leading-tight">
+            <Link
+              href={`/fleet/${vehicle.id}`}
+              className="after:absolute after:inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
+            >
+              {displayName}
+            </Link>
+          </h3>
           <p className="text-sm text-muted-foreground mt-0.5">{caption}</p>
         </div>
       </CardContent>

@@ -109,6 +109,27 @@ describe("VehicleCard", () => {
     });
   });
 
+  describe("navigation", () => {
+    it("h3 contains a link to /fleet/${vehicle.id}", () => {
+      render(<VehicleCard vehicle={baseVehicle} />);
+      const heading = screen.getByRole("heading", { level: 3 });
+      const link = heading.querySelector("a");
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute("href", "/fleet/v1");
+    });
+
+    it("link text is the display name", () => {
+      render(<VehicleCard vehicle={baseVehicle} />);
+      expect(screen.getByRole("link", { name: "Toyota Camry" })).toBeInTheDocument();
+    });
+
+    it("link text is the nickname when nickname is set", () => {
+      const vehicle: Vehicle = { ...baseVehicle, nickname: "Daily Driver" };
+      render(<VehicleCard vehicle={vehicle} />);
+      expect(screen.getByRole("link", { name: "Daily Driver" })).toBeInTheDocument();
+    });
+  });
+
   describe("context menu trigger", () => {
     it("renders the vehicle options button with vehicle-specific label", () => {
       render(<VehicleCard vehicle={baseVehicle} />);
