@@ -9,13 +9,20 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  DOCUMENT_TYPE_LABELS,
+  type DocumentType,
+} from "@/lib/validations/document";
+import type { Document } from "@/types";
 
 export function VehicleTabs({
   vehicleId,
   notes,
+  documents,
 }: {
   vehicleId: string;
   notes: string | null;
+  documents: Document[];
 }) {
   return (
     <Tabs defaultValue="documents">
@@ -32,18 +39,38 @@ export function VehicleTabs({
       </TabsList>
 
       <TabsContent value="documents" className="mt-6">
-        <div className="flex flex-col items-center gap-4 py-12 text-center">
-          <FileText size={40} className="text-muted-foreground" aria-hidden="true" />
-          <div>
-            <p className="font-medium">No documents yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Upload an insurance card, registration, or permit to get started.
-            </p>
+        {documents.length === 0 ? (
+          <div className="flex flex-col items-center gap-4 py-12 text-center">
+            <FileText size={40} className="text-muted-foreground" aria-hidden="true" />
+            <div>
+              <p className="font-medium">No documents yet</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Upload an insurance card, registration, or permit to get started.
+              </p>
+            </div>
+            <Button asChild className="min-h-[44px]">
+              <Link href={`/fleet/${vehicleId}/documents/new`}>Upload document</Link>
+            </Button>
           </div>
-          <Button asChild className="min-h-[44px]">
-            <Link href={`/fleet/${vehicleId}/documents/new`}>Upload document</Link>
-          </Button>
-        </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {documents.map((doc) => (
+              <li key={doc.id}>
+                <Link
+                  href={`/fleet/${vehicleId}/documents/${doc.id}`}
+                  className="flex items-center justify-between py-3 px-1 hover:bg-accent rounded-md min-h-[44px]"
+                >
+                  <span className="font-medium text-sm">
+                    {DOCUMENT_TYPE_LABELS[doc.document_type as DocumentType] ?? doc.document_type}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(doc.created_at).toLocaleDateString("en-CA")}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </TabsContent>
 
       <TabsContent value="obligations" className="mt-6">

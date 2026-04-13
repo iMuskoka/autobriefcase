@@ -4,6 +4,7 @@ export type ActionResult<T = void> =
   | { success: false; error: string }
 
 import { VEHICLE_CATEGORY_VALUES } from "@/lib/validations/vehicle";
+import type { DocumentType } from "@/lib/validations/document";
 
 // Derived from VEHICLE_CATEGORY_VALUES — single source of truth, cannot drift
 export type VehicleCategory = (typeof VEHICLE_CATEGORY_VALUES)[number];
@@ -23,9 +24,13 @@ export type Vehicle = {
 
 export type Document = {
   id: string
-  vehicle_id: string
   user_id: string
+  vehicle_id: string
+  storage_path: string
+  document_type: DocumentType
+  file_name: string
   created_at: string
+  updated_at: string
 }
 
 export type Reminder = {

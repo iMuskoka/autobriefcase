@@ -12,18 +12,25 @@ export default async function VehicleDetailPage({
   const { vehicleId } = await params;
 
   const supabase = await createClient();
-  const { data: vehicle } = await supabase
-    .from("vehicles")
-    .select("*")
-    .eq("id", vehicleId)
-    .single();
+  const [{ data: vehicle }, { data: documents }] = await Promise.all([
+    supabase.from("vehicles").select("*").eq("id", vehicleId).single(),
+    supabase
+      .from("documents")
+      .select("*")
+      .eq("vehicle_id", vehicleId)
+      .order("created_at", { ascending: false }),
+  ]);
 
   if (!vehicle) notFound();
 
   return (
     <div className="p-6 lg:p-8 flex flex-col gap-6">
       <VehicleDetailHeader vehicle={vehicle as Vehicle} vehicleId={vehicleId} />
-      <VehicleTabs vehicleId={vehicleId} notes={(vehicle as Vehicle).notes} />
+      <VehicleTabs
+        vehicleId={vehicleId}
+        notes={(vehicle as Vehicle).notes}
+        documents={documents ?? []}
+      />
     </div>
   );
 }
