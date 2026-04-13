@@ -4,6 +4,11 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { DocumentUploadForm } from "./DocumentUploadForm";
 
+const mockRouterPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockRouterPush }),
+}));
+
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -18,6 +23,7 @@ const mockSaveDocument = vi.mocked(saveDocument);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockRouterPush.mockClear();
 });
 
 describe("DocumentUploadForm", () => {
@@ -119,6 +125,10 @@ describe("DocumentUploadForm", () => {
         "insurance",
         "insurance.pdf",
       );
+    });
+
+    await waitFor(() => {
+      expect(mockRouterPush).toHaveBeenCalledWith("/fleet/v1");
     });
   });
 });

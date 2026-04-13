@@ -55,7 +55,7 @@ export async function saveDocument(
 
   // TODO(Story 5.1): auto-create reminder when expiry_date is set
 
-  redirect(`/fleet/${vehicleId}`);
+  return { success: true, data: undefined };
 }
 
 export async function deleteDocument(

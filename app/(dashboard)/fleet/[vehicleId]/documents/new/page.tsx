@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { DocumentUploadForm } from "@/components/documents/DocumentUploadForm";
+import { DocumentUploadReveal } from "@/components/documents/DocumentUploadReveal";
 
 export default async function DocumentUploadPage({
   params,
@@ -23,7 +23,7 @@ export default async function DocumentUploadPage({
 
   return (
     <div className="p-6 lg:p-8 max-w-lg">
-      <DocumentUploadForm vehicleId={vehicleId} vehicleName={vehicleName} />
+      <DocumentUploadReveal vehicleId={vehicleId} vehicleName={vehicleName} />
     </div>
   );
 }

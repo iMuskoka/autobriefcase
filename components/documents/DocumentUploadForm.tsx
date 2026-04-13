@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { saveDocument } from "@/lib/actions/documents";
 import {
@@ -23,6 +24,7 @@ export function DocumentUploadForm({
   vehicleId,
   vehicleName,
 }: DocumentUploadFormProps) {
+  const router = useRouter();
   const [state, setState] = useState<UploadState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -105,8 +107,9 @@ export function DocumentUploadForm({
       if (!result.success) {
         setError(result.error);
         setState("type-selection");
+      } else {
+        router.push(`/fleet/${vehicleId}`);
       }
-      // On success: saveDocument calls redirect("/fleet/[vehicleId]") server-side
     } catch {
       setError("Failed to save document. Try again.");
       setState("type-selection");
