@@ -86,7 +86,10 @@ describe("ManualEntryForm", () => {
     const { toast } = await import("sonner");
     const user = userEvent.setup();
 
-    mockSaveDocument.mockResolvedValueOnce({ success: true, data: undefined } as never);
+    mockSaveDocument.mockResolvedValueOnce({
+      success: true,
+      data: { reminderDate: null },
+    } as never);
 
     render(<ManualEntryForm {...defaultProps} />);
 
@@ -103,6 +106,33 @@ describe("ManualEntryForm", () => {
         expect.objectContaining({ holderName: "John Doe" }),
       );
       expect(toast).toHaveBeenCalledWith("Saved.");
+      expect(mockRouterPush).toHaveBeenCalledWith("/fleet/v1");
+    });
+  });
+
+  it("shows reminder toast when saveDocument returns a reminderDate", async () => {
+    const { toast } = await import("sonner");
+    const user = userEvent.setup();
+
+    mockSaveDocument.mockResolvedValueOnce({
+      success: true,
+      data: { reminderDate: "2026-07-01" },
+    } as never);
+
+    render(
+      <ManualEntryForm
+        {...defaultProps}
+        initialValues={{ expiryDate: "2026-07-01" }}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Insurance" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith(
+        "Saved. Reminder set 30 days before July 1, 2026.",
+      );
       expect(mockRouterPush).toHaveBeenCalledWith("/fleet/v1");
     });
   });
@@ -128,7 +158,10 @@ describe("ManualEntryForm", () => {
   it("coerces empty optional fields to null before saving", async () => {
     const user = userEvent.setup();
 
-    mockSaveDocument.mockResolvedValueOnce({ success: true, data: undefined } as never);
+    mockSaveDocument.mockResolvedValueOnce({
+      success: true,
+      data: { reminderDate: null },
+    } as never);
 
     render(<ManualEntryForm {...defaultProps} />);
 

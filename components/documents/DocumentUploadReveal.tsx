@@ -14,6 +14,7 @@ import { ExtractionField } from "./ExtractionField";
 import { ManualEntryForm } from "./ManualEntryForm";
 import { cn } from "@/lib/utils";
 import type { ExtractionResult, ExtractionField as ExtractionFieldType } from "@/types";
+import { buildSaveToast } from "@/lib/utils/toast-helpers";
 
 type UploadState = "idle" | "uploading" | "processing" | "reveal" | "failed" | "saving";
 
@@ -148,7 +149,7 @@ export function DocumentUploadReveal({
         confirmedFields,
       );
       if (result.success) {
-        toast("Saved.");
+        toast(buildSaveToast(result.data.reminderDate));
         router.push(`/fleet/${vehicleId}`);
       } else {
         setError(result.error);

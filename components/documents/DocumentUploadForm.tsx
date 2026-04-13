@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { saveDocument } from "@/lib/actions/documents";
 import {
@@ -10,6 +11,7 @@ import {
   type DocumentType,
 } from "@/lib/validations/document";
 import { cn } from "@/lib/utils";
+import { buildSaveToast } from "@/lib/utils/toast-helpers";
 
 type UploadState = "idle" | "uploading" | "type-selection" | "saving";
 
@@ -108,6 +110,7 @@ export function DocumentUploadForm({
         setError(result.error);
         setState("type-selection");
       } else {
+        toast(buildSaveToast(result.data.reminderDate));
         router.push(`/fleet/${vehicleId}`);
       }
     } catch {

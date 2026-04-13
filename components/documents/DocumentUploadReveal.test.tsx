@@ -168,7 +168,10 @@ describe("DocumentUploadReveal", () => {
       },
     });
 
-    mockSaveDocument.mockResolvedValueOnce({ success: true } as never);
+    mockSaveDocument.mockResolvedValueOnce({
+      success: true,
+      data: { reminderDate: null },
+    } as never);
 
     await user.click(screen.getByRole("button", { name: "Insurance" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
@@ -176,6 +179,35 @@ describe("DocumentUploadReveal", () => {
     await waitFor(() => {
       expect(mockSaveDocument).toHaveBeenCalled();
       expect(toast).toHaveBeenCalledWith("Saved.");
+      expect(mockRouterPush).toHaveBeenCalledWith("/fleet/v1");
+    });
+  });
+
+  it("shows reminder toast when saveDocument returns a reminderDate", async () => {
+    const { toast } = await import("sonner");
+    const user = await uploadAndExtract({
+      success: true,
+      data: {
+        fields: [
+          { key: "holderName", value: "Jane Smith", confidence: "confirmed" },
+          { key: "expiryDate", value: "2026-07-01", confidence: "confirmed" },
+        ],
+        overallConfidence: "confirmed",
+      },
+    });
+
+    mockSaveDocument.mockResolvedValueOnce({
+      success: true,
+      data: { reminderDate: "2026-07-01" },
+    } as never);
+
+    await user.click(screen.getByRole("button", { name: "Insurance" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith(
+        "Saved. Reminder set 30 days before July 1, 2026.",
+      );
       expect(mockRouterPush).toHaveBeenCalledWith("/fleet/v1");
     });
   });

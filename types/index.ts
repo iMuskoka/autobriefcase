@@ -53,8 +53,12 @@ export type ExtractionResult = {
 }
 
 export type Reminder = {
-  id: string
-  vehicle_id: string
-  user_id: string
-  created_at: string
+  id:             string
+  user_id:        string
+  vehicle_id:     string
+  document_id:    string
+  expiry_date:    string        // ISO 8601 date string: "YYYY-MM-DD"
+  lead_time_days: number
+  status:         'pending' | 'sent' | 'dismissed'
+  created_at:     string
 }

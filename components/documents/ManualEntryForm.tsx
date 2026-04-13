@@ -16,6 +16,7 @@ import {
   type DocumentType,
 } from "@/lib/validations/document";
 import { cn } from "@/lib/utils";
+import { buildSaveToast } from "@/lib/utils/toast-helpers";
 
 const schema = z.object({
   holderName:   z.string().optional(),
@@ -78,7 +79,7 @@ export function ManualEntryForm({
       },
     );
     if (result.success) {
-      toast("Saved.");
+      toast(buildSaveToast(result.data.reminderDate));
       router.push(`/fleet/${vehicleId}`);
     } else {
       setError(result.error);

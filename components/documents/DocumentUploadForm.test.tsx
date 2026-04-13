@@ -9,6 +9,11 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockRouterPush }),
 }));
 
+vi.mock("sonner", () => ({
+  toast: vi.fn(),
+  Toaster: () => null,
+}));
+
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -95,6 +100,7 @@ describe("DocumentUploadForm", () => {
   });
 
   it("calls saveDocument with correct args when Save is clicked", async () => {
+    const { toast } = await import("sonner");
     const user = userEvent.setup();
     mockFetch
       .mockResolvedValueOnce({
@@ -103,7 +109,10 @@ describe("DocumentUploadForm", () => {
       } as Response)
       .mockResolvedValueOnce({ ok: true } as Response);
 
-    mockSaveDocument.mockResolvedValueOnce({ success: true } as never);
+    mockSaveDocument.mockResolvedValueOnce({
+      success: true,
+      data: { reminderDate: null },
+    } as never);
 
     render(<DocumentUploadForm vehicleId="v1" vehicleName="Toyota Camry" />);
 
@@ -125,9 +134,43 @@ describe("DocumentUploadForm", () => {
         "insurance",
         "insurance.pdf",
       );
+      expect(toast).toHaveBeenCalledWith("Saved.");
+      expect(mockRouterPush).toHaveBeenCalledWith("/fleet/v1");
     });
+  });
+
+  it("shows reminder toast when saveDocument returns a reminderDate", async () => {
+    const { toast } = await import("sonner");
+    const user = userEvent.setup();
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ signedUrl: "https://storage.example.com/upload", path: "user/v1/file.pdf" }),
+      } as Response)
+      .mockResolvedValueOnce({ ok: true } as Response);
+
+    mockSaveDocument.mockResolvedValueOnce({
+      success: true,
+      data: { reminderDate: "2026-07-01" },
+    } as never);
+
+    render(<DocumentUploadForm vehicleId="v1" vehicleName="Toyota Camry" />);
+
+    const input = screen.getByLabelText("Select a file to upload");
+    const file = new File(["content"], "insurance.pdf", { type: "application/pdf" });
+    await user.upload(input, file);
 
     await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Insurance" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Insurance" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith(
+        "Saved. Reminder set 30 days before July 1, 2026.",
+      );
       expect(mockRouterPush).toHaveBeenCalledWith("/fleet/v1");
     });
   });

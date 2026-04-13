@@ -18,7 +18,7 @@ export async function saveDocument(
     policyNumber?: string | null;
     issuerName?: string | null;
   },
-): Promise<ActionResult<void>> {
+): Promise<ActionResult<{ reminderDate: string | null }>> {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   if (!claims?.claims?.sub) {
@@ -36,26 +36,46 @@ export async function saveDocument(
     return { success: false, error: "Not found" };
   }
 
-  const { error } = await supabase.from("documents").insert({
-    user_id:       claims.claims.sub,
-    vehicle_id:    vehicleId,
-    storage_path:  storagePath,
-    document_type: documentType,
-    file_name:     fileName,
-    expiry_date:   confirmedFields?.expiryDate   ?? null,
-    holder_name:   confirmedFields?.holderName   ?? null,
-    policy_number: confirmedFields?.policyNumber ?? null,
-    issuer_name:   confirmedFields?.issuerName   ?? null,
-  });
+  const { data: insertedDoc, error } = await supabase
+    .from("documents")
+    .insert({
+      user_id:       claims.claims.sub,
+      vehicle_id:    vehicleId,
+      storage_path:  storagePath,
+      document_type: documentType,
+      file_name:     fileName,
+      expiry_date:   confirmedFields?.expiryDate   ?? null,
+      holder_name:   confirmedFields?.holderName   ?? null,
+      policy_number: confirmedFields?.policyNumber ?? null,
+      issuer_name:   confirmedFields?.issuerName   ?? null,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !insertedDoc) {
     console.error("Document save error:", error);
     return { success: false, error: "Failed to save document. Try again." };
   }
 
-  // TODO(Story 5.1): auto-create reminder when expiry_date is set
+  let reminderDate: string | null = null;
+  if (confirmedFields?.expiryDate) {
+    const { error: reminderError } = await supabase.from("reminders").insert({
+      user_id:        claims.claims.sub,
+      vehicle_id:     vehicleId,
+      document_id:    insertedDoc.id,
+      expiry_date:    confirmedFields.expiryDate,
+      lead_time_days: 30,
+      status:         "pending",
+    });
+    if (!reminderError) {
+      reminderDate = confirmedFields.expiryDate;
+    } else {
+      console.error("Reminder creation error:", reminderError);
+      // Non-fatal: document saved; reminder silently skipped; toast shows "Saved."
+    }
+  }
 
-  return { success: true, data: undefined };
+  return { success: true, data: { reminderDate } };
 }
 
 export async function deleteDocument(
