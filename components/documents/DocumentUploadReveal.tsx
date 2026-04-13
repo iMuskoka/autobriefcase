@@ -11,6 +11,7 @@ import {
   type DocumentType,
 } from "@/lib/validations/document";
 import { ExtractionField } from "./ExtractionField";
+import { ManualEntryForm } from "./ManualEntryForm";
 import { cn } from "@/lib/utils";
 import type { ExtractionResult, ExtractionField as ExtractionFieldType } from "@/types";
 
@@ -86,7 +87,14 @@ export function DocumentUploadReveal({
       const result = await confirmExtraction(vehicleId, path);
 
       if (!result.success || result.data.overallConfidence === "failed") {
-        setFieldValues({});
+        // Capture any non-null partial values for ManualEntryForm pre-population
+        const partial: Record<string, string | null> = {};
+        if (result.success && result.data.fields) {
+          for (const f of result.data.fields) {
+            if (f.value != null) partial[f.key] = f.value;
+          }
+        }
+        setFieldValues(partial);
         setState("failed");
       } else {
         setExtractionResult(result.data);
@@ -149,29 +157,6 @@ export function DocumentUploadReveal({
     } catch {
       setError("Failed to save document. Try again.");
       setState("reveal");
-    }
-  };
-
-  const handleFailedSave = async () => {
-    if (!selectedType) return;
-    setState("saving");
-    try {
-      const result = await saveDocument(
-        vehicleId,
-        storagePath,
-        selectedType,
-        uploadedFileName,
-      );
-      if (result.success) {
-        toast("Saved.");
-        router.push(`/fleet/${vehicleId}`);
-      } else {
-        setError(result.error);
-        setState("failed");
-      }
-    } catch {
-      setError("Failed to save document. Try again.");
-      setState("failed");
     }
   };
 
@@ -333,46 +318,14 @@ export function DocumentUploadReveal({
         </div>
       )}
 
-      {/* Failed state — Story 4.3 placeholder */}
+      {/* Failed state — ManualEntryForm */}
       {state === "failed" && (
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            We couldn&apos;t read this one — fill in what you know.
-          </p>
-
-          <div>
-            <p className="text-sm font-medium mb-3">Document type</p>
-            <div className="flex flex-wrap gap-2">
-              {DOCUMENT_TYPE_VALUES.map(type => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setSelectedType(type)}
-                  className={cn(
-                    "px-4 py-2 rounded-md border text-sm font-medium min-h-[44px] transition-colors",
-                    selectedType === type
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-input bg-background hover:bg-accent",
-                  )}
-                >
-                  {DOCUMENT_TYPE_LABELS[type]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {error && (
-            <p role="alert" className="text-sm text-destructive">{error}</p>
-          )}
-
-          <Button
-            onClick={handleFailedSave}
-            disabled={!selectedType}
-            className="min-h-[44px] self-start"
-          >
-            Save
-          </Button>
-        </div>
+        <ManualEntryForm
+          vehicleId={vehicleId}
+          storagePath={storagePath}
+          fileName={uploadedFileName}
+          initialValues={fieldValues}
+        />
       )}
     </div>
   );

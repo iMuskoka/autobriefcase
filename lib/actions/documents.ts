@@ -102,6 +102,55 @@ export async function deleteDocument(
   redirect(`/fleet/${vehicleId}`);
 }
 
+export async function updateDocument(
+  documentId: string,
+  vehicleId: string,
+  fields: {
+    documentType: DocumentType;
+    holderName?: string | null;
+    expiryDate?: string | null;
+    policyNumber?: string | null;
+    issuerName?: string | null;
+  },
+): Promise<ActionResult<void>> {
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  if (!claims?.claims?.sub) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Verify document belongs to user (via vehicle ownership — RLS enforces user_id)
+  const { data: document } = await supabase
+    .from("documents")
+    .select("id")
+    .eq("id", documentId)
+    .eq("vehicle_id", vehicleId)
+    .single();
+
+  if (!document) {
+    return { success: false, error: "Not found" };
+  }
+
+  const { error } = await supabase
+    .from("documents")
+    .update({
+      document_type: fields.documentType,
+      holder_name:   fields.holderName   ?? null,
+      expiry_date:   fields.expiryDate   ?? null,
+      policy_number: fields.policyNumber ?? null,
+      issuer_name:   fields.issuerName   ?? null,
+    })
+    .eq("id", documentId)
+    .eq("vehicle_id", vehicleId);
+
+  if (error) {
+    console.error("Document update error:", error);
+    return { success: false, error: "Failed to save. Try again." };
+  }
+
+  return { success: true, data: undefined };
+}
+
 export async function confirmExtraction(
   vehicleId: string,
   storagePath: string,

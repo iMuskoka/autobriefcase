@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createDownloadUrl } from "@/lib/storage/signed-urls";
 import { Button } from "@/components/ui/button";
 import { DeleteDocumentButton } from "@/components/documents/DeleteDocumentButton";
+import { DocumentEditForm } from "@/components/documents/DocumentEditForm";
+import type { Document } from "@/types";
 import {
   DOCUMENT_TYPE_LABELS,
   type DocumentType,
@@ -93,6 +95,9 @@ export default async function DocumentDetailPage({
           style={{ height: "80vh" }}
         />
       )}
+
+      {/* Edit details */}
+      <DocumentEditForm document={document as Document} vehicleId={vehicleId} />
     </div>
   );
 }

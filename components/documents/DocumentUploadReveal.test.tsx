@@ -4,6 +4,10 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { DocumentUploadReveal } from "./DocumentUploadReveal";
 
+vi.mock("./ManualEntryForm", () => ({
+  ManualEntryForm: () => <div data-testid="manual-entry-form" />,
+}));
+
 const mockRouterPush = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockRouterPush }),
@@ -176,8 +180,7 @@ describe("DocumentUploadReveal", () => {
     });
   });
 
-  it("handleFailedSave — failed extraction state saves without confirmedFields and toasts", async () => {
-    const { toast } = await import("sonner");
+  it("renders ManualEntryForm when extraction returns failed confidence", async () => {
     const user = userEvent.setup();
 
     mockFetch
@@ -193,8 +196,6 @@ describe("DocumentUploadReveal", () => {
       data: { fields: [], overallConfidence: "failed" },
     } as never);
 
-    mockSaveDocument.mockResolvedValueOnce({ success: true } as never);
-
     render(<DocumentUploadReveal vehicleId="v1" vehicleName="Toyota Camry" />);
 
     const input = screen.getByLabelText("Select a file to upload");
@@ -202,17 +203,7 @@ describe("DocumentUploadReveal", () => {
     await user.upload(input, file);
 
     await waitFor(() => {
-      expect(screen.getByText("We couldn't read this one — fill in what you know.")).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: "Registration" }));
-    await user.click(screen.getByRole("button", { name: "Save" }));
-
-    await waitFor(() => {
-      // Called WITHOUT confirmedFields (5th arg absent)
-      expect(mockSaveDocument).toHaveBeenCalledWith("v1", "user/v1/file.jpg", "registration", "bad-scan.jpg");
-      expect(toast).toHaveBeenCalledWith("Saved.");
-      expect(mockRouterPush).toHaveBeenCalledWith("/fleet/v1");
+      expect(screen.getByTestId("manual-entry-form")).toBeInTheDocument();
     });
   });
 });
