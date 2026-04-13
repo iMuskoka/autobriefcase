@@ -35,7 +35,7 @@ const baseVehicle: Vehicle = {
 
 describe("VehicleDetailHeader", () => {
   it("renders make + model as h1 when nickname is null", () => {
-    render(<VehicleDetailHeader vehicle={baseVehicle} />);
+    render(<VehicleDetailHeader vehicle={baseVehicle} vehicleId="v1" />);
     expect(
       screen.getByRole("heading", { level: 1, name: "Toyota Camry" }),
     ).toBeInTheDocument();
@@ -43,26 +43,36 @@ describe("VehicleDetailHeader", () => {
 
   it("renders nickname as h1 when nickname is set", () => {
     const vehicle: Vehicle = { ...baseVehicle, nickname: "Daily Driver" };
-    render(<VehicleDetailHeader vehicle={vehicle} />);
+    render(<VehicleDetailHeader vehicle={vehicle} vehicleId="v1" />);
     expect(
       screen.getByRole("heading", { level: 1, name: "Daily Driver" }),
     ).toBeInTheDocument();
   });
 
   it("renders caption as year make model", () => {
-    render(<VehicleDetailHeader vehicle={baseVehicle} />);
+    render(<VehicleDetailHeader vehicle={baseVehicle} vehicleId="v1" />);
     expect(screen.getByText("2022 Toyota Camry")).toBeInTheDocument();
   });
 
   it("renders a link to /fleet (back navigation)", () => {
-    render(<VehicleDetailHeader vehicle={baseVehicle} />);
+    render(<VehicleDetailHeader vehicle={baseVehicle} vehicleId="v1" />);
     const link = screen.getByRole("link", { name: "Fleet" });
     expect(link).toHaveAttribute("href", "/fleet");
   });
 
   it("renders an aria-hidden svg icon", () => {
-    const { container } = render(<VehicleDetailHeader vehicle={baseVehicle} />);
+    const { container } = render(
+      <VehicleDetailHeader vehicle={baseVehicle} vehicleId="v1" />,
+    );
     const svg = container.querySelector("svg[aria-hidden='true']");
     expect(svg).toBeInTheDocument();
+  });
+
+  it("renders an edit link to /fleet/v1/edit", () => {
+    render(<VehicleDetailHeader vehicle={baseVehicle} vehicleId="v1" />);
+    expect(screen.getByRole("link", { name: "Edit vehicle" })).toHaveAttribute(
+      "href",
+      "/fleet/v1/edit",
+    );
   });
 });

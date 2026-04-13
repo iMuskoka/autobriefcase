@@ -22,7 +22,7 @@ export default async function VehicleDetailPage({
 
   return (
     <div className="p-6 lg:p-8 flex flex-col gap-6">
-      <VehicleDetailHeader vehicle={vehicle as Vehicle} />
+      <VehicleDetailHeader vehicle={vehicle as Vehicle} vehicleId={vehicleId} />
       <VehicleTabs vehicleId={vehicleId} notes={(vehicle as Vehicle).notes} />
     </div>
   );

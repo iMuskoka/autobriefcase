@@ -7,7 +7,13 @@ import {
 } from "@/lib/vehicle-categories";
 import type { Vehicle, VehicleCategory } from "@/types";
 
-export function VehicleDetailHeader({ vehicle }: { vehicle: Vehicle }) {
+export function VehicleDetailHeader({
+  vehicle,
+  vehicleId,
+}: {
+  vehicle: Vehicle;
+  vehicleId: string;
+}) {
   const Icon =
     VEHICLE_CATEGORY_ICONS[vehicle.category as VehicleCategory] ??
     VEHICLE_CATEGORY_FALLBACK_ICON;
@@ -16,17 +22,22 @@ export function VehicleDetailHeader({ vehicle }: { vehicle: Vehicle }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Button
-        variant="ghost"
-        size="sm"
-        asChild
-        className="self-start min-h-[44px] -ml-2 gap-1"
-      >
-        <Link href="/fleet">
-          <ArrowLeft size={16} aria-hidden="true" />
-          Fleet
-        </Link>
-      </Button>
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          asChild
+          className="self-start min-h-[44px] -ml-2 gap-1"
+        >
+          <Link href="/fleet">
+            <ArrowLeft size={16} aria-hidden="true" />
+            Fleet
+          </Link>
+        </Button>
+        <Button variant="ghost" size="sm" asChild className="min-h-[44px]">
+          <Link href={`/fleet/${vehicleId}/edit`}>Edit vehicle</Link>
+        </Button>
+      </div>
       <div className="flex items-center gap-3">
         <Icon size={40} aria-hidden="true" className="text-muted-foreground shrink-0" />
         <div>
