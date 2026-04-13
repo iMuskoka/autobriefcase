@@ -29,8 +29,27 @@ export type Document = {
   storage_path: string
   document_type: DocumentType
   file_name: string
+  expiry_date: string | null
+  holder_name: string | null
+  policy_number: string | null
+  issuer_name: string | null
   created_at: string
   updated_at: string
+}
+
+// AI extraction canonical types — used everywhere extraction data flows
+export type ExtractionConfidence = 'confirmed' | 'verify' | 'failed'
+
+export type ExtractionField = {
+  key: string           // 'holderName' | 'expiryDate' | 'policyNumber' | 'issuerName'
+  value: string | null
+  confidence: ExtractionConfidence
+}
+
+export type ExtractionResult = {
+  fields: ExtractionField[]
+  overallConfidence: ExtractionConfidence
+  rawText?: string
 }
 
 export type Reminder = {

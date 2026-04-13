@@ -2,14 +2,22 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import type { ActionResult } from "@/types";
+import type { ActionResult, ExtractionResult } from "@/types";
 import type { DocumentType } from "@/lib/validations/document";
+import { extractDocument } from "@/lib/ai/extract-document";
+import { createDownloadUrl } from "@/lib/storage/signed-urls";
 
 export async function saveDocument(
   vehicleId: string,
   storagePath: string,
   documentType: DocumentType,
   fileName: string,
+  confirmedFields?: {
+    expiryDate?: string | null;
+    holderName?: string | null;
+    policyNumber?: string | null;
+    issuerName?: string | null;
+  },
 ): Promise<ActionResult<void>> {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
@@ -34,12 +42,18 @@ export async function saveDocument(
     storage_path:  storagePath,
     document_type: documentType,
     file_name:     fileName,
+    expiry_date:   confirmedFields?.expiryDate   ?? null,
+    holder_name:   confirmedFields?.holderName   ?? null,
+    policy_number: confirmedFields?.policyNumber ?? null,
+    issuer_name:   confirmedFields?.issuerName   ?? null,
   });
 
   if (error) {
     console.error("Document save error:", error);
     return { success: false, error: "Failed to save document. Try again." };
   }
+
+  // TODO(Story 5.1): auto-create reminder when expiry_date is set
 
   redirect(`/fleet/${vehicleId}`);
 }
@@ -86,4 +100,35 @@ export async function deleteDocument(
   }
 
   redirect(`/fleet/${vehicleId}`);
+}
+
+export async function confirmExtraction(
+  vehicleId: string,
+  storagePath: string,
+): Promise<ActionResult<ExtractionResult>> {
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  if (!claims?.claims?.sub) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const { data: vehicle } = await supabase
+    .from("vehicles")
+    .select("id")
+    .eq("id", vehicleId)
+    .single();
+
+  if (!vehicle) {
+    return { success: false, error: "Not found" };
+  }
+
+  try {
+    const signedUrl = await createDownloadUrl(supabase, storagePath, 60);
+    const fileName = storagePath.split("/").pop() ?? "document";
+    const extractionResult = await extractDocument(signedUrl, fileName);
+    return { success: true, data: extractionResult };
+  } catch (error) {
+    console.error("confirmExtraction error:", error);
+    return { success: false, error: "Extraction failed" };
+  }
 }
