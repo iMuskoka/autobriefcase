@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createDownloadUrl } from "@/lib/storage/signed-urls";
 import { Button } from "@/components/ui/button";
+import { DeleteDocumentButton } from "@/components/documents/DeleteDocumentButton";
 import {
   DOCUMENT_TYPE_LABELS,
   type DocumentType,
@@ -67,13 +68,14 @@ export default async function DocumentDetailPage({
         </p>
       </div>
 
-      {/* Download button */}
-      <div>
+      {/* Actions */}
+      <div className="flex gap-2 flex-wrap">
         <Button asChild className="min-h-[44px]">
           <a href={downloadUrl} download={document.file_name}>
             Download
           </a>
         </Button>
+        <DeleteDocumentButton documentId={document.id} vehicleId={vehicleId} />
       </div>
 
       {/* Inline viewer */}

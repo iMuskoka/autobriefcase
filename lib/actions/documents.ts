@@ -43,3 +43,47 @@ export async function saveDocument(
 
   redirect(`/fleet/${vehicleId}`);
 }
+
+export async function deleteDocument(
+  documentId: string,
+  vehicleId: string,
+): Promise<ActionResult<void>> {
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  if (!claims?.claims?.sub) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Fetch first to get storage_path — RLS enforces ownership
+  const { data: document } = await supabase
+    .from("documents")
+    .select("id, storage_path")
+    .eq("id", documentId)
+    .eq("vehicle_id", vehicleId)
+    .single();
+
+  if (!document) {
+    return { success: false, error: "Not found" };
+  }
+
+  const { error: deleteError } = await supabase
+    .from("documents")
+    .delete()
+    .eq("id", documentId);
+
+  if (deleteError) {
+    console.error("Document delete error:", deleteError);
+    return { success: false, error: "Failed to delete document. Try again." };
+  }
+
+  // Delete from Storage — failure is logged but does not block redirect
+  const { error: storageError } = await supabase.storage
+    .from("vehicle-documents")
+    .remove([document.storage_path]);
+
+  if (storageError) {
+    console.error("Storage delete error:", storageError);
+  }
+
+  redirect(`/fleet/${vehicleId}`);
+}
