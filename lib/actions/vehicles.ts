@@ -77,3 +77,31 @@ export async function updateVehicle(
 
   redirect(`/fleet/${vehicleId}`);
 }
+
+export async function deleteVehicle(
+  vehicleId: string,
+): Promise<ActionResult<void>> {
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  if (!claims?.claims?.sub) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const { data: deleted, error } = await supabase
+    .from("vehicles")
+    .delete()
+    .eq("id", vehicleId)
+    .select("id");
+
+  if (error) {
+    console.error("Vehicle delete error:", error);
+    return { success: false, error: "Failed to delete vehicle. Try again." };
+  }
+
+  // RLS filters out rows belonging to other users — 0 rows = not found or unauthorized
+  if (!deleted || deleted.length === 0) {
+    return { success: false, error: "Not found" };
+  }
+
+  redirect("/fleet");
+}

@@ -4,6 +4,15 @@ import React from "react";
 import { VehicleDetailHeader } from "./VehicleDetailHeader";
 import type { Vehicle } from "@/types";
 
+vi.mock("./DeleteVehicleButton", () => ({
+  DeleteVehicleButton: ({
+    vehicleName,
+  }: {
+    vehicleId: string;
+    vehicleName: string;
+  }) => <button>Delete {vehicleName}</button>,
+}));
+
 vi.mock("next/link", () => ({
   default: ({
     href,
@@ -74,5 +83,12 @@ describe("VehicleDetailHeader", () => {
       "href",
       "/fleet/v1/edit",
     );
+  });
+
+  it("renders a delete button for the vehicle", () => {
+    render(<VehicleDetailHeader vehicle={baseVehicle} vehicleId="v1" />);
+    expect(
+      screen.getByRole("button", { name: "Delete Toyota Camry" }),
+    ).toBeInTheDocument();
   });
 });

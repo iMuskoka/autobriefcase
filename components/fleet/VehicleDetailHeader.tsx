@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DeleteVehicleButton } from "@/components/fleet/DeleteVehicleButton";
 import {
   VEHICLE_CATEGORY_ICONS,
   VEHICLE_CATEGORY_FALLBACK_ICON,
@@ -34,9 +35,12 @@ export function VehicleDetailHeader({
             Fleet
           </Link>
         </Button>
-        <Button variant="ghost" size="sm" asChild className="min-h-[44px]">
-          <Link href={`/fleet/${vehicleId}/edit`}>Edit vehicle</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild className="min-h-[44px]">
+            <Link href={`/fleet/${vehicleId}/edit`}>Edit vehicle</Link>
+          </Button>
+          <DeleteVehicleButton vehicleId={vehicleId} vehicleName={displayName} />
+        </div>
       </div>
       <div className="flex items-center gap-3">
         <Icon size={40} aria-hidden="true" className="text-muted-foreground shrink-0" />
