@@ -60,5 +60,6 @@ export type Reminder = {
   expiry_date:    string        // ISO 8601 date string: "YYYY-MM-DD"
   lead_time_days: number
   status:         'pending' | 'sent' | 'dismissed'
+  sent_at:        string | null  // ISO 8601 UTC timestamp; null if not yet sent
   created_at:     string
 }
