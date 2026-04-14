@@ -52,6 +52,8 @@ export type ExtractionResult = {
   rawText?: string
 }
 
+export type VehicleHealthState = 'healthy' | 'attention' | 'critical' | 'no-docs'
+
 export type Reminder = {
   id:             string
   user_id:        string

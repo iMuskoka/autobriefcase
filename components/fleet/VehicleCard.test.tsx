@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 import { VehicleCard } from "./VehicleCard";
 import type { Vehicle } from "@/types";
+import type { ObligationItem } from "@/lib/obligations";
 
 vi.mock("next/link", () => ({
   default: ({
@@ -127,6 +128,64 @@ describe("VehicleCard", () => {
       const vehicle: Vehicle = { ...baseVehicle, nickname: "Daily Driver" };
       render(<VehicleCard vehicle={vehicle} />);
       expect(screen.getByRole("link", { name: "Daily Driver" })).toBeInTheDocument();
+    });
+  });
+
+  describe("health badge", () => {
+    it("renders 'Covered' badge text when healthState='healthy'", () => {
+      render(<VehicleCard vehicle={baseVehicle} healthState="healthy" />);
+      expect(screen.getByText("Covered")).toBeInTheDocument();
+    });
+
+    it("renders 'Due soon' badge text when healthState='attention'", () => {
+      render(<VehicleCard vehicle={baseVehicle} healthState="attention" />);
+      expect(screen.getByText("Due soon")).toBeInTheDocument();
+    });
+
+    it("renders 'Due now' badge text when healthState='critical'", () => {
+      render(<VehicleCard vehicle={baseVehicle} healthState="critical" />);
+      expect(screen.getByText("Due now")).toBeInTheDocument();
+    });
+
+    it("updates aria-label to reflect health state", () => {
+      render(<VehicleCard vehicle={baseVehicle} healthState="healthy" />);
+      expect(screen.getByRole("article")).toHaveAttribute(
+        "aria-label",
+        "Toyota Camry — covered",
+      );
+    });
+  });
+
+  describe("obligation rows", () => {
+    const sampleObligation: ObligationItem = {
+      reminderId:   "r1",
+      vehicleId:    "v1",
+      vehicleName:  "Toyota Camry",
+      documentType: "Insurance",
+      expiryDate:   "2026-06-01",
+      daysToExpiry: 49,
+    };
+
+    it("renders obligation rows when obligations prop is passed", () => {
+      render(
+        <VehicleCard
+          vehicle={baseVehicle}
+          healthState="healthy"
+          obligations={[sampleObligation]}
+        />,
+      );
+      expect(screen.getByText("Insurance")).toBeInTheDocument();
+    });
+
+    it("renders '+N more' when more than 3 obligations", () => {
+      const obs: ObligationItem[] = Array.from({ length: 5 }, (_, i) => ({
+        ...sampleObligation,
+        reminderId: `r${i}`,
+      }));
+      render(
+        <VehicleCard vehicle={baseVehicle} healthState="healthy" obligations={obs} />,
+      );
+      expect(screen.getByText("+2 more")).toBeInTheDocument();
     });
   });
 

@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type FleetHealthHeroProps =
+export type FleetHealthHeroProps =
   | { state: "empty" }
   | { state: "covered"; vehicleCount: number }
   | { state: "attention"; vehicleCount: number; nextRenewalDays?: number }

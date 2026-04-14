@@ -13,16 +13,20 @@ import {
   DOCUMENT_TYPE_LABELS,
   type DocumentType,
 } from "@/lib/validations/document";
+import { ObligationRow } from "@/components/obligations/ObligationRow";
 import type { Document } from "@/types";
+import type { ObligationItem } from "@/lib/obligations";
 
 export function VehicleTabs({
   vehicleId,
   notes,
   documents,
+  obligations = [],
 }: {
   vehicleId: string;
   notes: string | null;
   documents: Document[];
+  obligations?: ObligationItem[];
 }) {
   return (
     <Tabs defaultValue="documents">
@@ -74,12 +78,20 @@ export function VehicleTabs({
       </TabsContent>
 
       <TabsContent value="obligations" className="mt-6">
-        <div className="flex flex-col items-center gap-2 py-12 text-center">
-          <p className="font-medium text-muted-foreground">No obligations yet</p>
-          <p className="text-sm text-muted-foreground">
-            Obligations appear automatically once documents with expiry dates are uploaded.
-          </p>
-        </div>
+        {obligations.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-12 text-center">
+            <p className="font-medium text-muted-foreground">No obligations yet</p>
+            <p className="text-sm text-muted-foreground">
+              Obligations appear automatically once documents with expiry dates are uploaded.
+            </p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {obligations.map(o => (
+              <ObligationRow key={o.reminderId} obligation={o} variant="full" />
+            ))}
+          </ul>
+        )}
       </TabsContent>
 
       <TabsContent value="notes" className="mt-6">

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { TopNav } from "@/components/shared/TopNav";
 import { Sidebar } from "@/components/shared/Sidebar";
 import { BottomTabBar } from "@/components/shared/BottomTabBar";
@@ -18,6 +19,7 @@ export default async function DashboardLayout({
   }
 
   return (
+    <NuqsAdapter>
     <div className="min-h-screen bg-background">
       {/* Fixed top navigation bar */}
       <TopNav />
@@ -42,5 +44,6 @@ export default async function DashboardLayout({
         <BottomTabBar />
       </div>
     </div>
+    </NuqsAdapter>
   );
 }
