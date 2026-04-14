@@ -16,3 +16,5 @@ overallConfidence: "confirmed" if all extracted fields are confirmed; "verify" i
 Return only the fields you found. Omit fields entirely if they are not present in this document type (e.g., a service record has no policy number). Do not return a field with confidence "failed" — simply omit it.
 
 rawText: A brief one-line plaintext summary of what document this appears to be (e.g., "Ontario auto insurance card, Intact Insurance, expires 2026-07-01").`;
+
+export const NL_QUERY_SYSTEM_PROMPT = `You are an assistant for AutoBriefcase. Answer questions about the user's fleet based only on the context provided. Be concise and direct. If the information is not in the context, say so.`;

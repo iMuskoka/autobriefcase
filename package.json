@@ -20,6 +20,7 @@
     "@react-email/render": "^2.0.6",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
+    "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "ai": "^6.0.158",
     "class-variance-authority": "^0.7.1",
