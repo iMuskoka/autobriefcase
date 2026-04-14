@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { confirmExtraction, saveDocument } from "@/lib/actions/documents";
+import { confirmExtraction, saveDocument, markRenewed } from "@/lib/actions/documents";
 import {
   DOCUMENT_TYPE_VALUES,
   DOCUMENT_TYPE_LABELS,
@@ -14,7 +14,7 @@ import { ExtractionField } from "./ExtractionField";
 import { ManualEntryForm } from "./ManualEntryForm";
 import { cn } from "@/lib/utils";
 import type { ExtractionResult, ExtractionField as ExtractionFieldType } from "@/types";
-import { buildSaveToast } from "@/lib/utils/toast-helpers";
+import { buildSaveToast, buildRenewedToast } from "@/lib/utils/toast-helpers";
 
 type UploadState = "idle" | "uploading" | "processing" | "reveal" | "failed" | "saving";
 
@@ -23,11 +23,16 @@ const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png", "application/pdf"];
 interface DocumentUploadRevealProps {
   vehicleId: string;
   vehicleName: string;
+  renewsContext?: {
+    reminderId: string;
+    leadTimeDays: number;
+  };
 }
 
 export function DocumentUploadReveal({
   vehicleId,
   vehicleName,
+  renewsContext,
 }: DocumentUploadRevealProps) {
   const router = useRouter();
   const [state, setState] = useState<UploadState>("idle");
@@ -141,19 +146,41 @@ export function DocumentUploadReveal({
         policyNumber: fieldValues["policyNumber"] ?? null,
         issuerName:   fieldValues["issuerName"]   ?? null,
       };
-      const result = await saveDocument(
-        vehicleId,
-        storagePath,
-        selectedType,
-        uploadedFileName,
-        confirmedFields,
-      );
-      if (result.success) {
-        toast(buildSaveToast(result.data.reminderDate));
-        router.push(`/fleet/${vehicleId}`);
+
+      if (renewsContext) {
+        // Renewal mode: call markRenewed to preserve lead_time_days and dismiss old reminder
+        const result = await markRenewed(
+          renewsContext.reminderId,
+          vehicleId,
+          storagePath,
+          selectedType,
+          uploadedFileName,
+          confirmedFields,
+          renewsContext.leadTimeDays,
+        );
+        if (result.success) {
+          toast(buildRenewedToast(result.data.nextReminderDate));
+          router.push(`/fleet/${vehicleId}`);
+        } else {
+          setError(result.error);
+          setState("reveal");
+        }
       } else {
-        setError(result.error);
-        setState("reveal");
+        // Normal mode: existing saveDocument logic
+        const result = await saveDocument(
+          vehicleId,
+          storagePath,
+          selectedType,
+          uploadedFileName,
+          confirmedFields,
+        );
+        if (result.success) {
+          toast(buildSaveToast(result.data.reminderDate));
+          router.push(`/fleet/${vehicleId}`);
+        } else {
+          setError(result.error);
+          setState("reveal");
+        }
       }
     } catch {
       setError("Failed to save document. Try again.");

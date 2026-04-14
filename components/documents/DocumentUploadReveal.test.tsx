@@ -21,15 +21,17 @@ vi.mock("sonner", () => ({
 vi.mock("@/lib/actions/documents", () => ({
   confirmExtraction: vi.fn(),
   saveDocument: vi.fn(),
+  markRenewed: vi.fn(),
 }));
 
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-import { confirmExtraction, saveDocument } from "@/lib/actions/documents";
+import { confirmExtraction, saveDocument, markRenewed } from "@/lib/actions/documents";
 const mockConfirmExtraction = vi.mocked(confirmExtraction);
 const mockSaveDocument = vi.mocked(saveDocument);
+const mockMarkRenewed = vi.mocked(markRenewed);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -209,6 +211,112 @@ describe("DocumentUploadReveal", () => {
         "Saved. Reminder set 30 days before July 1, 2026.",
       );
       expect(mockRouterPush).toHaveBeenCalledWith("/fleet/v1");
+    });
+  });
+
+  it("calls markRenewed with renewsContext and shows renewal toast on success", async () => {
+    const { toast } = await import("sonner");
+
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ signedUrl: "https://storage.example.com/upload", path: "user/v1/file.jpg" }),
+      } as Response)
+      .mockResolvedValueOnce({ ok: true } as Response);
+
+    mockConfirmExtraction.mockResolvedValueOnce({
+      success: true,
+      data: {
+        fields: [{ key: "holderName", value: "Jane Smith", confidence: "confirmed" }],
+        overallConfidence: "confirmed",
+      },
+    } as never);
+
+    mockMarkRenewed.mockResolvedValueOnce({
+      success: true,
+      data: { nextReminderDate: "2027-03-18" },
+    } as never);
+
+    const user = userEvent.setup();
+    render(
+      <DocumentUploadReveal
+        vehicleId="v1"
+        vehicleName="Toyota Camry"
+        renewsContext={{ reminderId: "reminder-123", leadTimeDays: 14 }}
+      />,
+    );
+
+    const input = screen.getByLabelText("Select a file to upload");
+    const file = new File(["content"], "insurance.jpg", { type: "image/jpeg" });
+    await user.upload(input, file);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Insurance" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(mockMarkRenewed).toHaveBeenCalledWith(
+        "reminder-123",
+        "v1",
+        "user/v1/file.jpg",
+        "insurance",
+        "insurance.jpg",
+        expect.objectContaining({ holderName: "Jane Smith" }),
+        14,
+      );
+      expect(mockSaveDocument).not.toHaveBeenCalled();
+      expect(toast).toHaveBeenCalledWith("Renewed. Next reminder set for March 18, 2027.");
+      expect(mockRouterPush).toHaveBeenCalledWith("/fleet/v1");
+    });
+  });
+
+  it("shows error when markRenewed returns failure", async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ signedUrl: "https://storage.example.com/upload", path: "user/v1/file.jpg" }),
+      } as Response)
+      .mockResolvedValueOnce({ ok: true } as Response);
+
+    mockConfirmExtraction.mockResolvedValueOnce({
+      success: true,
+      data: {
+        fields: [{ key: "holderName", value: "Jane Smith", confidence: "confirmed" }],
+        overallConfidence: "confirmed",
+      },
+    } as never);
+
+    mockMarkRenewed.mockResolvedValueOnce({
+      success: false,
+      error: "Failed to save document. Try again.",
+    } as never);
+
+    const user = userEvent.setup();
+    render(
+      <DocumentUploadReveal
+        vehicleId="v1"
+        vehicleName="Toyota Camry"
+        renewsContext={{ reminderId: "reminder-123", leadTimeDays: 30 }}
+      />,
+    );
+
+    const input = screen.getByLabelText("Select a file to upload");
+    const file = new File(["content"], "insurance.jpg", { type: "image/jpeg" });
+    await user.upload(input, file);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Insurance" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Failed to save document. Try again.")).toBeInTheDocument();
+      expect(mockRouterPush).not.toHaveBeenCalled();
     });
   });
 

@@ -1,13 +1,14 @@
-import { Html, Body, Container, Heading, Text, Hr } from "@react-email/components";
+import { Html, Body, Container, Heading, Text, Hr, Section, Button } from "@react-email/components";
 
 interface ReminderEmailProps {
   vehicleName:     string;   // e.g. "2019 Toyota Camry" or nickname
   documentType:    string;   // human-readable: "Insurance" not "insurance"
   expiryDate:      string;   // formatted: "July 1, 2026"
   daysUntilExpiry: number;   // e.g. 30
+  obligationUrl?:  string;   // deep link to obligation detail page
 }
 
-export function ReminderEmail({ vehicleName, documentType, expiryDate, daysUntilExpiry }: ReminderEmailProps) {
+export function ReminderEmail({ vehicleName, documentType, expiryDate, daysUntilExpiry, obligationUrl }: ReminderEmailProps) {
   return (
     <Html>
       <Body style={{ fontFamily: "sans-serif", backgroundColor: "#f9fafb", padding: "40px 0" }}>
@@ -22,6 +23,25 @@ export function ReminderEmail({ vehicleName, documentType, expiryDate, daysUntil
           <Text style={{ fontSize: "14px", color: "#6b7280" }}>
             Renewal date: {expiryDate}
           </Text>
+          {obligationUrl && (
+            <Section style={{ marginTop: "24px" }}>
+              <Button
+                href={obligationUrl}
+                style={{
+                  backgroundColor: "#22c55e",
+                  color: "#ffffff",
+                  borderRadius: "6px",
+                  padding: "12px 20px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  textDecoration: "none",
+                  display: "inline-block",
+                }}
+              >
+                I&apos;ve renewed this →
+              </Button>
+            </Section>
+          )}
         </Container>
       </Body>
     </Html>

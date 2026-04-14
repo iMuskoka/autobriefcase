@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DeleteDocumentButton } from "@/components/documents/DeleteDocumentButton";
 import { DocumentEditForm } from "@/components/documents/DocumentEditForm";
 import { ReminderSettings } from "@/components/reminders/ReminderSettings";
+import { getDaysToExpiry } from "@/lib/obligations";
 import type { Document, Vehicle, Reminder } from "@/types";
 import {
   DOCUMENT_TYPE_LABELS,
@@ -58,6 +59,15 @@ export default async function DocumentDetailPage({
     DOCUMENT_TYPE_LABELS[document.document_type as DocumentType] ?? document.document_type;
   const isImage = /\.(jpg|jpeg|png)$/i.test(document.file_name);
 
+  // Renewal CTA — only when the reminder is active (pending or sent)
+  const hasActiveReminder =
+    reminder !== null &&
+    (reminder.status === "pending" || reminder.status === "sent");
+  const daysToExpiry = document.expiry_date ? getDaysToExpiry(document.expiry_date) : null;
+  const renewalHref = hasActiveReminder
+    ? `/fleet/${vehicleId}/documents/new?renewsReminderId=${(reminder as Reminder).id}`
+    : null;
+
   return (
     <div className="flex flex-col gap-4 p-6 lg:p-8 max-w-4xl">
       {/* Header */}
@@ -75,9 +85,46 @@ export default async function DocumentDetailPage({
         </p>
       </div>
 
+      {/* Obligation summary — expiry date + days remaining */}
+      {document.expiry_date && daysToExpiry !== null && (
+        <div className="flex items-center gap-3 text-sm">
+          <span className="text-muted-foreground">
+            Expires{" "}
+            {(() => {
+              const [y, m, d] = document.expiry_date!.split("-").map(Number);
+              return new Intl.DateTimeFormat("en-CA", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }).format(new Date(y, m - 1, d));
+            })()}
+          </span>
+          <span
+            className={
+              daysToExpiry <= 14
+                ? "text-destructive font-medium"
+                : daysToExpiry <= 30
+                ? "text-warning font-medium"
+                : "text-primary font-medium"
+            }
+          >
+            {daysToExpiry < 0 ? "Overdue" : daysToExpiry === 0 ? "Today" : `${daysToExpiry} days`}
+          </span>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex gap-2 flex-wrap">
-        <Button asChild className="min-h-[44px]">
+        {renewalHref && (
+          <Button asChild className="min-h-[44px]">
+            <Link href={renewalHref}>I&apos;ve renewed this</Link>
+          </Button>
+        )}
+        <Button
+          asChild
+          className="min-h-[44px]"
+          variant={renewalHref ? "outline" : "default"}
+        >
           <a href={downloadUrl} download={document.file_name}>
             Download
           </a>

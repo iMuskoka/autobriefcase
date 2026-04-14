@@ -7,18 +7,19 @@ export interface SendReminderParams {
   documentType:    string;   // human-readable label
   expiryDate:      string;   // formatted date string "July 1, 2026"
   daysUntilExpiry: number;
+  obligationUrl?:  string;   // deep link to obligation detail page
 }
 
 export async function sendReminder(params: SendReminderParams): Promise<{ messageId: string }> {
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const { to, vehicleName, documentType, expiryDate, daysUntilExpiry } = params;
+  const { to, vehicleName, documentType, expiryDate, daysUntilExpiry, obligationUrl } = params;
   const subject = `Your ${vehicleName} ${documentType} renews in ${daysUntilExpiry} days`;
 
   const { data, error } = await resend.emails.send({
     from:  process.env.RESEND_FROM_EMAIL ?? "AutoBriefcase <noreply@autobriefcase.app>",
     to,
     subject,
-    react: ReminderEmail({ vehicleName, documentType, expiryDate, daysUntilExpiry }),
+    react: ReminderEmail({ vehicleName, documentType, expiryDate, daysUntilExpiry, obligationUrl }),
   });
 
   if (error || !data?.id) {

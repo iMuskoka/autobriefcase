@@ -32,6 +32,8 @@ function makeDueReminder(overrides: Record<string, unknown> = {}) {
   return {
     id: "reminder-1",
     user_id: "user-1",
+    vehicle_id: "vehicle-1",
+    document_id: "document-1",
     expiry_date: expiryStr,
     lead_time_days: 30, // fire date = today
     vehicles: { make: "Toyota", model: "Camry", year: 2019, nickname: null },
@@ -161,6 +163,102 @@ describe("GET /api/cron/reminders", () => {
     const body = await res.json();
     expect(body).toEqual({ dispatched: 0, failed: 0 });
     expect(mockSendReminder).not.toHaveBeenCalled();
+  });
+
+  it("passes obligationUrl to sendReminder when APP_URL is set", async () => {
+    process.env.APP_URL = "https://app.autobriefcase.com";
+    const reminder = makeDueReminder({ vehicle_id: "v-xyz", document_id: "d-abc" });
+
+    let fromCallCount = 0;
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "reminders") {
+        fromCallCount++;
+        if (fromCallCount === 1) {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                lte: vi.fn().mockResolvedValue({ data: [reminder], error: null }),
+              }),
+            }),
+          };
+        }
+        return {
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ error: null }),
+          }),
+        };
+      }
+      if (table === "user_profiles") {
+        return {
+          select: vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({
+              data: [{ id: "user-1", email: "user1@example.com" }],
+              error: null,
+            }),
+          }),
+        };
+      }
+      return {};
+    });
+
+    mockSendReminder.mockResolvedValue({ messageId: "msg_ok" });
+
+    const req = makeRequest("Bearer test_secret");
+    await GET(req);
+
+    expect(mockSendReminder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        obligationUrl: "https://app.autobriefcase.com/fleet/v-xyz/documents/d-abc",
+      }),
+    );
+
+    delete process.env.APP_URL;
+  });
+
+  it("omits obligationUrl from sendReminder when APP_URL is not set", async () => {
+    delete process.env.APP_URL;
+    const reminder = makeDueReminder();
+
+    let fromCallCount = 0;
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "reminders") {
+        fromCallCount++;
+        if (fromCallCount === 1) {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                lte: vi.fn().mockResolvedValue({ data: [reminder], error: null }),
+              }),
+            }),
+          };
+        }
+        return {
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ error: null }),
+          }),
+        };
+      }
+      if (table === "user_profiles") {
+        return {
+          select: vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({
+              data: [{ id: "user-1", email: "user1@example.com" }],
+              error: null,
+            }),
+          }),
+        };
+      }
+      return {};
+    });
+
+    mockSendReminder.mockResolvedValue({ messageId: "msg_ok" });
+
+    const req = makeRequest("Bearer test_secret");
+    await GET(req);
+
+    expect(mockSendReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ obligationUrl: undefined }),
+    );
   });
 
   it("counts failed dispatches when sendReminder throws", async () => {

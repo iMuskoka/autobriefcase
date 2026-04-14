@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   const { data: candidates, error: queryError } = await supabase
     .from("reminders")
     .select(`
-      id, user_id, expiry_date, lead_time_days,
+      id, user_id, vehicle_id, document_id, expiry_date, lead_time_days,
       vehicles!vehicle_id (make, model, year, nickname),
       documents!document_id (document_type)
     `)
@@ -84,7 +84,12 @@ export async function GET(request: Request) {
         day: "numeric",
       }).format(new Date(y, m - 1, d));
 
-      await sendReminder({ to: email, vehicleName, documentType, expiryDate, daysUntilExpiry });
+      const appUrl = (process.env.APP_URL ?? "").replace(/\/$/, "");
+      const obligationUrl = appUrl
+        ? `${appUrl}/fleet/${reminder.vehicle_id}/documents/${reminder.document_id}`
+        : undefined;
+
+      await sendReminder({ to: email, vehicleName, documentType, expiryDate, daysUntilExpiry, obligationUrl });
 
       const { error: updateError } = await supabase
         .from("reminders")

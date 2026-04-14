@@ -29,6 +29,9 @@ beforeEach(() => {
   process.env.RESEND_FROM_EMAIL = "AutoBriefcase <noreply@autobriefcase.app>";
 });
 
+import { ReminderEmail } from "./templates/ReminderEmail";
+const mockReminderEmail = vi.mocked(ReminderEmail);
+
 describe("sendReminder", () => {
   it("sends email with correct payload", async () => {
     mockSend.mockResolvedValueOnce({ data: { id: "msg_123" }, error: null });
@@ -61,5 +64,25 @@ describe("sendReminder", () => {
     mockSend.mockResolvedValueOnce({ data: { id: null }, error: null });
 
     await expect(sendReminder(baseParams)).rejects.toThrow("Resend error: unknown");
+  });
+
+  it("passes obligationUrl to ReminderEmail when provided", async () => {
+    mockSend.mockResolvedValueOnce({ data: { id: "msg_456" }, error: null });
+
+    await sendReminder({ ...baseParams, obligationUrl: "https://app.autobriefcase.com/fleet/v1/documents/d1" });
+
+    expect(mockReminderEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ obligationUrl: "https://app.autobriefcase.com/fleet/v1/documents/d1" }),
+    );
+  });
+
+  it("does not pass obligationUrl to ReminderEmail when not provided", async () => {
+    mockSend.mockResolvedValueOnce({ data: { id: "msg_789" }, error: null });
+
+    await sendReminder(baseParams);
+
+    expect(mockReminderEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ obligationUrl: undefined }),
+    );
   });
 });
