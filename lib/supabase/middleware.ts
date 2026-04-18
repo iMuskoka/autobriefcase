@@ -7,10 +7,8 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  // If the env vars are not set, skip proxy check. You can remove this
-  // once you setup the project.
   if (!hasEnvVars) {
-    return supabaseResponse;
+    throw new Error("Supabase env vars missing — check Vercel config");
   }
 
   // With Fluid compute, don't put this client in a global environment
