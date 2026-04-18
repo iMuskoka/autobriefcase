@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TopNavLinks } from "./TopNavLinks";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { NLQueryBar } from "@/components/nl-query/NLQueryBar";
 
 export function TopNav() {
   return (
@@ -12,8 +13,11 @@ export function TopNav() {
       >
         AutoBriefcase
       </Link>
-      <div className="flex-1">
+      <div className="shrink-0">
         <TopNavLinks />
+      </div>
+      <div className="hidden lg:flex flex-1 justify-center px-4">
+        <NLQueryBar className="max-w-sm w-full" />
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <ThemeSwitcher />
