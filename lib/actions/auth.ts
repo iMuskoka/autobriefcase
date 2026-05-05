@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import {
   signUpSchema,
@@ -11,13 +12,18 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ActionResult } from "@/types";
 
+// Inline schema mirrors signUpSchema's email + password rules.
+// .pick() is not available on refined object schemas in Zod v4.
+const signUpInputSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
 export async function signUpAction(
   email: string,
   password: string,
 ): Promise<ActionResult<void>> {
-  const parsed = signUpSchema
-    .pick({ email: true, password: true })
-    .safeParse({ email, password });
+  const parsed = signUpInputSchema.safeParse({ email, password });
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
   }
