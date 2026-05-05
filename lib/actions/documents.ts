@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getClaims } from "@/lib/auth/get-claims";
 import { redirect } from "next/navigation";
 import type { ActionResult, ExtractionResult } from "@/types";
 import type { DocumentType } from "@/lib/validations/document";
@@ -19,11 +20,11 @@ export async function saveDocument(
     issuerName?: string | null;
   },
 ): Promise<ActionResult<{ reminderDate: string | null }>> {
-  const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  if (!claims?.claims?.sub) {
+  const claims = await getClaims();
+  if (!claims) {
     return { success: false, error: "Unauthorized" };
   }
+  const supabase = await createClient();
 
   // Verify vehicle belongs to user (RLS on vehicles filters by user_id)
   const { data: vehicle } = await supabase
@@ -39,7 +40,7 @@ export async function saveDocument(
   const { data: insertedDoc, error } = await supabase
     .from("documents")
     .insert({
-      user_id:       claims.claims.sub,
+      user_id:       claims.userId,
       vehicle_id:    vehicleId,
       storage_path:  storagePath,
       document_type: documentType,
@@ -60,7 +61,7 @@ export async function saveDocument(
   let reminderDate: string | null = null;
   if (confirmedFields?.expiryDate) {
     const { error: reminderError } = await supabase.from("reminders").insert({
-      user_id:        claims.claims.sub,
+      user_id:        claims.userId,
       vehicle_id:     vehicleId,
       document_id:    insertedDoc.id,
       expiry_date:    confirmedFields.expiryDate,
@@ -82,11 +83,11 @@ export async function deleteDocument(
   documentId: string,
   vehicleId: string,
 ): Promise<ActionResult<void>> {
-  const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  if (!claims?.claims?.sub) {
+  const claims = await getClaims();
+  if (!claims) {
     return { success: false, error: "Unauthorized" };
   }
+  const supabase = await createClient();
 
   // Fetch first to get storage_path — RLS enforces ownership
   const { data: document } = await supabase
@@ -133,11 +134,11 @@ export async function updateDocument(
     issuerName?: string | null;
   },
 ): Promise<ActionResult<void>> {
-  const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  if (!claims?.claims?.sub) {
+  const claims = await getClaims();
+  if (!claims) {
     return { success: false, error: "Unauthorized" };
   }
+  const supabase = await createClient();
 
   // Verify document belongs to user (via vehicle ownership — RLS enforces user_id)
   const { data: document } = await supabase
@@ -185,12 +186,12 @@ export async function markRenewed(
   },
   leadTimeDays: number,
 ): Promise<ActionResult<{ nextReminderDate: string | null }>> {
-  const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  if (!claims?.claims?.sub) {
+  const claims = await getClaims();
+  if (!claims) {
     return { success: false, error: "Unauthorized" };
   }
-  const userId = claims.claims.sub as string;
+  const userId = claims.userId;
+  const supabase = await createClient();
 
   // Verify vehicle belongs to user (RLS enforces ownership)
   const { data: vehicle } = await supabase
@@ -273,11 +274,11 @@ export async function confirmExtraction(
   vehicleId: string,
   storagePath: string,
 ): Promise<ActionResult<ExtractionResult>> {
-  const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  if (!claims?.claims?.sub) {
+  const claims = await getClaims();
+  if (!claims) {
     return { success: false, error: "Unauthorized" };
   }
+  const supabase = await createClient();
 
   const { data: vehicle } = await supabase
     .from("vehicles")

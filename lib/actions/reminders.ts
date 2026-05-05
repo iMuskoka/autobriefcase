@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getClaims } from "@/lib/auth/get-claims";
 import type { ActionResult } from "@/types";
 
 const leadTimeSchema = z.union([
@@ -23,12 +24,12 @@ export async function updateReminderSettings(
     return { success: false, error: "Invalid lead time" };
   }
 
-  const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  if (!claims?.claims?.sub) {
+  const claims = await getClaims();
+  if (!claims) {
     return { success: false, error: "Unauthorized" };
   }
-  const userId = claims.claims.sub as string;
+  const userId = claims.userId;
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("reminders")

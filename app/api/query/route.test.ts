@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // vi.hoisted ensures mock factories are ready before vi.mock runs
-const mockGetUser         = vi.hoisted(() => vi.fn());
+const mockGetClaims      = vi.hoisted(() => vi.fn());
 const mockBuildFleetCtx  = vi.hoisted(() => vi.fn());
 const mockQueryFleet     = vi.hoisted(() => vi.fn());
 const mockRatelimitLimit = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue({
-    auth: { getUser: mockGetUser },
+    auth: { getClaims: mockGetClaims },
   }),
 }));
 
@@ -45,7 +45,10 @@ const makeRequest = (body?: unknown) =>
   });
 
 function setupAuth(user: { id: string } | null = { id: USER_ID }) {
-  mockGetUser.mockResolvedValue({ data: { user }, error: null });
+  mockGetClaims.mockResolvedValue({
+    data: user ? { claims: { sub: user.id } } : null,
+    error: null,
+  });
 }
 
 function setupRateLimit(allowed: boolean, resetMs: number = Date.now() + 60_000) {
@@ -73,7 +76,7 @@ afterEach(() => {
 
 describe("POST /api/query", () => {
   describe("AC4 — unauthenticated", () => {
-    it("returns 401 when getUser returns no user", async () => {
+    it("returns 401 when getClaims returns no claims", async () => {
       setupAuth(null);
 
       const res = await POST(makeRequest({ query: "when does my insurance expire?" }));
@@ -85,8 +88,8 @@ describe("POST /api/query", () => {
       expect(mockQueryFleet).not.toHaveBeenCalled();
     });
 
-    it("returns 401 when getUser returns an auth error", async () => {
-      mockGetUser.mockResolvedValue({ data: { user: null }, error: new Error("session expired") });
+    it("returns 401 when getClaims returns an auth error", async () => {
+      mockGetClaims.mockResolvedValue({ data: null, error: new Error("session expired") });
 
       const res = await POST(makeRequest({ query: "any question" }));
 

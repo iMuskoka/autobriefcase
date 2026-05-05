@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { createClient } from "@/lib/supabase/server";
+import { getClaims } from "@/lib/auth/get-claims";
 import { buildFleetContext, queryFleet } from "@/lib/ai/query-fleet";
 
 const MAX_QUERY_LENGTH = 1000;
@@ -19,11 +20,11 @@ function makeRatelimiter(): Ratelimit | null {
 
 export async function POST(request: Request) {
   // 1. Auth
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
+  const claims = await getClaims();
+  if (!claims) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const supabase = await createClient();
 
   // 2. Validate request body
   let query: string;
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
   // 3. Rate limiting (gracefully skipped when Upstash env vars absent)
   const ratelimit = makeRatelimiter();
   if (ratelimit) {
-    const { success, reset } = await ratelimit.limit(`ratelimit:query:${user.id}`);
+    const { success, reset } = await ratelimit.limit(`ratelimit:query:${claims.userId}`);
     if (!success) {
       // P1 patch: floor at 1 to avoid "0 minutes" or negative values on clock skew
       const minutesRemaining = Math.max(1, Math.ceil((reset - Date.now()) / 60_000));

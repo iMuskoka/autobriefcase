@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getClaims } from "@/lib/auth/get-claims";
 import { createUploadUrl } from "@/lib/storage/signed-urls";
 
 const ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "application/pdf"] as const;
@@ -18,17 +19,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
   }
 
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  const claims = await getClaims();
+  if (!claims) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const supabase = await createClient();
 
   try {
     const { signedUrl, path } = await createUploadUrl(
       supabase,
-      user.id,
+      claims.userId,
       vehicleId,
       fileName,
     );

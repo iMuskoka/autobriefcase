@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getClaims } from "@/lib/auth/get-claims";
 import { vehicleSchema, type VehicleFormValues } from "@/lib/validations/vehicle";
 import { redirect } from "next/navigation";
 import type { ActionResult } from "@/types";
@@ -13,14 +14,14 @@ export async function createVehicle(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  if (!data?.claims?.sub) {
+  const claims = await getClaims();
+  if (!claims) {
     return { success: false, error: "Unauthorized" };
   }
+  const supabase = await createClient();
 
   const { error } = await supabase.from("vehicles").insert({
-    user_id: data.claims.sub,
+    user_id: claims.userId,
     category: parsed.data.category,
     make: parsed.data.make,
     model: parsed.data.model,
@@ -46,11 +47,11 @@ export async function updateVehicle(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  if (!claims?.claims?.sub) {
+  const claims = await getClaims();
+  if (!claims) {
     return { success: false, error: "Unauthorized" };
   }
+  const supabase = await createClient();
 
   const { data: updated, error } = await supabase
     .from("vehicles")
@@ -81,11 +82,11 @@ export async function updateVehicle(
 export async function deleteVehicle(
   vehicleId: string,
 ): Promise<ActionResult<void>> {
-  const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  if (!claims?.claims?.sub) {
+  const claims = await getClaims();
+  if (!claims) {
     return { success: false, error: "Unauthorized" };
   }
+  const supabase = await createClient();
 
   const { data: deleted, error } = await supabase
     .from("vehicles")

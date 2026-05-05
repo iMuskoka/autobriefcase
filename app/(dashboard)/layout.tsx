@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getClaims } from "@/lib/auth/get-claims";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { TopNav } from "@/components/shared/TopNav";
 import { Sidebar } from "@/components/shared/Sidebar";
@@ -11,10 +11,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
+  const claims = await getClaims();
 
-  if (error || !data?.claims) {
+  if (!claims) {
     redirect("/sign-in");
   }
 
